@@ -6,6 +6,7 @@
 #
 #   SWITCHES: -Power
 #   OPTIONS: 'High', 'Balanced', 'Saver'
+#   COMPAT: x64, x86
 #
 ##############################################################################
 
@@ -30,5 +31,21 @@ if (!$types.ContainsKey($power)) {
     echo "This power configuration does not exist. Please use 'high', 'balanced' or 'saver'"; EXIT
 }
 
-# Write the command to execute the power config changes
-powercfg.exe /setactive $types[$power]
+# The majority of the time our system will b 64-bit so system32 will be our default folder
+$powerDir = "\system32\"
+
+# If Processor architecture is 32-bit however, we will change the folder to SysWOW64
+$proc_arch = (Get-WmiObject -Class Win32_ComputerSystem).SystemType -match ‘(x86)’
+
+if ($proc_arch) {
+    $powerDir = "\SysWOW64\"
+}
+
+# Get the windows directory
+$Windir = Get-ChildItem ENV:windir
+
+# Concatenate the command to run the power config executable from the correct location with the correct power type.
+$cmd = $Windir.Value + $powerDir + "powercfg.exe /setactive " + $types[$power]
+
+# Execute
+iex $cmd
