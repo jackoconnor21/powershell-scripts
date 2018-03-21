@@ -23,13 +23,15 @@ $types = @{
 
 # Check whether or not a switch was passed to the script. Without one we can't select a power setting.
 if (!$PSBoundParameters.ContainsKey("power")) {
-    Write-Output "Please pass the power option you wish to use. E.G. ""Change-PowerConfig.ps1 -Power high"""; EXIT
+    Write-Host "Please pass the power option you wish to use. E.G. ""Change-PowerConfig.ps1 -Power high"""; EXIT
 }
 
 # Ensure the argument passed to our Power switch exists in the array. (so it has a valid associated GUID)
 if (!$types.ContainsKey($power)) {
-    echo "This power configuration does not exist. Please use 'high', 'balanced' or 'saver'"; EXIT
+    Write-Host "This power configuration does not exist. Please use 'high', 'balanced' or 'saver'"; EXIT
 }
+
+Write-Host "Power plan selected: $power"
 
 # The majority of the time our system will b 64-bit so system32 will be our default folder
 $powerDir = "\system32\"
@@ -39,6 +41,7 @@ $proc_arch = (Get-WmiObject -Class Win32_ComputerSystem).SystemType -match ‘(x
 
 if ($proc_arch) {
     $powerDir = "\SysWOW64\"
+    Write-Host "Setting SysWOW64 (32-bit) as the working directory to run powercfg.exe"
 }
 
 # Get the windows directory
@@ -49,3 +52,5 @@ $cmd = $Windir.Value + $powerDir + "powercfg.exe /setactive " + $types[$power]
 
 # Execute
 iex $cmd
+
+Write-Host "Power configuration successfully set to $power performance" -ForegroundColor green
