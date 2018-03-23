@@ -33,22 +33,11 @@ if (!$types.ContainsKey($power)) {
 
 Write-Host "Power plan selected: $power"
 
-# The majority of the time our system will b 64-bit so system32 will be our default folder
-$powerDir = "\system32\"
-
-# If Processor architecture is 32-bit however, we will change the folder to SysWOW64
-$proc_arch = (Get-WmiObject -Class Win32_ComputerSystem).SystemType -match ‘(x86)’
-
-if ($proc_arch) {
-    $powerDir = "\SysWOW64\"
-    Write-Host "Setting SysWOW64 (32-bit) as the working directory to run powercfg.exe"
-}
-
 # Get the windows directory
 $Windir = Get-ChildItem ENV:windir
 
 # Concatenate the command to run the power config executable from the correct location with the correct power type.
-$cmd = $Windir.Value + $powerDir + "powercfg.exe /setactive " + $types[$power]
+$cmd = $Windir.Value + "\system32\" + "powercfg.exe /setactive " + $types[$power]
 
 # Execute
 iex $cmd
