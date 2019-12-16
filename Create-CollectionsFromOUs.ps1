@@ -47,7 +47,10 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 $Path = Get-Location
 
- # Import the ConfigurationManager.psd1 module if((Get-Module ConfigurationManager) -eq $null) {    Import-Module "$($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1"}
+ # Import the ConfigurationManager.psd1 module 
+if((Get-Module ConfigurationManager) -eq $null) {
+    Import-Module "$($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1"
+}
 
 # Get the site code.
 $SiteCode = (Get-PSDrive -PSProvider CMSITE).Name
@@ -58,6 +61,17 @@ Write-Host "Imported the 'ActiveDirectory' module" -ForegroundColor Cyan
 
 Set-Location "$SiteCode`:"
 
+# Function by thepip3r @ https://gallery.technet.microsoft.com/scriptcenter/Get-CanonicalName-Convert-a2aa82e5
+function Get-CanonicalName ([string[]]$DistinguishedName) {    
+    foreach ($dn in $DistinguishedName) {      
+        $d = $dn.Split(',') ## Split the dn string up into it's constituent parts 
+        $arr = (@(($d | Where-Object { $_ -notmatch 'DC=' }) | ForEach-Object { $_.Substring(3) }))  ## get parts excluding the parts relevant to the FQDN and trim off the dn syntax 
+        [array]::Reverse($arr)  ## Flip the order of the array. 
+ 
+        ## Create and return the string representation in canonical name format of the supplied DN 
+        "{0}/{1}" -f  (($d | Where-Object { $_ -match 'dc=' } | ForEach-Object { $_.Replace('DC=','') }) -join '.'), ($arr -join '/') 
+    } 
+}
 # Create a schedule to run every 4 hours.
 $Schedule = New-CMSchedule –RecurInterval Hours –RecurCount 4
 
@@ -141,15 +155,3 @@ Foreach ($OU in $OUs) {
 }
 
 Set-Location $Path
-
-# Function by thepip3r @ https://gallery.technet.microsoft.com/scriptcenter/Get-CanonicalName-Convert-a2aa82e5
-function Get-CanonicalName ([string[]]$DistinguishedName) {    
-    foreach ($dn in $DistinguishedName) {      
-        $d = $dn.Split(',') ## Split the dn string up into it's constituent parts 
-        $arr = (@(($d | Where-Object { $_ -notmatch 'DC=' }) | ForEach-Object { $_.Substring(3) }))  ## get parts excluding the parts relevant to the FQDN and trim off the dn syntax 
-        [array]::Reverse($arr)  ## Flip the order of the array. 
- 
-        ## Create and return the string representation in canonical name format of the supplied DN 
-        "{0}/{1}" -f  (($d | Where-Object { $_ -match 'dc=' } | ForEach-Object { $_.Replace('DC=','') }) -join '.'), ($arr -join '/') 
-    } 
-}
